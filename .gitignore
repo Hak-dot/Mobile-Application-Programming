@@ -1,16 +1,15 @@
-   *.iml
-   .gradle/
-   /local.properties
-   /.idea/
-   .DS_Store
-   /build/
-   /captures
-   .externalNativeBuild
-   .cxx
-   *.apk
-   *.aab
-
-   # Bí mật, không được commit lên repo công khai
-   google-services.json
-   *.jks
-   *.keystore
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+/build/
+/captures
+.externalNativeBuild
+.cxx
+.DS_Store
+*.apk
+*.aab
+google-services.json
+*.jks
+*.keystore

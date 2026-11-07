@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/exploreFragment">
+
+    <fragment
+        android:id="@+id/exploreFragment"
+        android:name="com.nhom.movieapp.explore.ui.ExploreFragment"
+        android:label="@string/tab_explore" />
+
+    <fragment
+        android:id="@+id/watchlistFragment"
+        android:name="com.nhom.movieapp.watchlist.ui.WatchlistFragment"
+        android:label="@string/tab_watchlist" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.nhom.movieapp.auth.ui.ProfileFragment"
+        android:label="@string/tab_profile" />
+
+</navigation>

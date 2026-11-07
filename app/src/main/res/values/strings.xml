@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MovieApp</string>
+    <string name="tab_explore">Khám phá</string>
+    <string name="tab_watchlist">Watchlist</string>
+    <string name="tab_profile">Hồ sơ</string>
+    <string name="placeholder_explore">Màn hình Khám phá (bạn B làm)</string>
+    <string name="placeholder_watchlist">Màn hình Watchlist (bạn C làm)</string>
+    <string name="placeholder_profile">Màn hình Hồ sơ (bạn A làm)</string>
+</resources>
