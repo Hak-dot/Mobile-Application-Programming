@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.legacy.kapt)
+    alias(libs.plugins.google.services)
 }
 
 val localProps = Properties().apply {
@@ -95,4 +96,8 @@ dependencies {
 
     // Phát hiện rò rỉ bộ nhớ (chỉ bản debug)
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 }
