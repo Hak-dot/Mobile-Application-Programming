@@ -10,11 +10,22 @@ import com.nhom.movieapp.auth.data.AuthRepository
 import com.nhom.movieapp.auth.data.SessionManager
 import com.nhom.movieapp.data.Resource
 import kotlinx.coroutines.launch
+import androidx.lifecycle.asLiveData
+import com.nhom.movieapp.data.local.AppDatabase
+import com.nhom.movieapp.data.local.UserEntity
+import kotlinx.coroutines.NonCancellable
 
 class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repository = AuthRepository()
     private val session = SessionManager(app)
+
+    private val userDao = AppDatabase.getInstance(app).userDao()
+
+    val user: LiveData<UserEntity?>
+        get() = repository.currentUser?.uid
+            ?.let { userDao.observe(it).asLiveData() }
+            ?: MutableLiveData(null)
 
     private val _state = MutableLiveData<Resource<Unit>?>()
     val state: LiveData<Resource<Unit>?> = _state
@@ -40,6 +51,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() {
         repository.logout()
         session.clear()
+        viewModelScope.launch(NonCancellable) { userDao.clear() }
     }
 
     fun consume() {
@@ -50,7 +62,14 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = Resource.Loading
         viewModelScope.launch {
             val result = action()
-            if (result is Resource.Success) session.save(email)
+            if (result is Resource.Success) {
+                session.save(email)
+                repository.currentUser?.let {
+                    userDao.upsert(
+                        UserEntity(it.uid, it.email ?: email, email.substringBefore('@'), System.currentTimeMillis())
+                    )
+                }
+            }
             _state.value = result
         }
     }
