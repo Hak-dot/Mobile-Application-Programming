@@ -7,16 +7,47 @@
     <fragment
         android:id="@+id/exploreFragment"
         android:name="com.nhom.movieapp.explore.ui.ExploreFragment"
-        android:label="@string/tab_explore" />
+        android:label="Khám phá" />
 
     <fragment
         android:id="@+id/watchlistFragment"
         android:name="com.nhom.movieapp.watchlist.ui.WatchlistFragment"
-        android:label="@string/tab_watchlist" />
+        android:label="Watchlist" />
 
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.nhom.movieapp.auth.ui.ProfileFragment"
-        android:label="@string/tab_profile" />
+        android:label="Hồ sơ">
+        <action
+            android:id="@+id/action_profile_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.nhom.movieapp.auth.ui.LoginFragment"
+        android:label="Đăng nhập">
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_login_to_explore"
+            app:destination="@id/exploreFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.nhom.movieapp.auth.ui.RegisterFragment"
+        android:label="Đăng ký">
+        <action
+            android:id="@+id/action_register_to_explore"
+            app:destination="@id/exploreFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
 
 </navigation>
