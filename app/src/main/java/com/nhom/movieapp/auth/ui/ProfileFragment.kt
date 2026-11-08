@@ -11,7 +11,7 @@ import com.nhom.movieapp.R
 import com.nhom.movieapp.auth.viewmodel.AuthViewModel
 import com.nhom.movieapp.databinding.FragmentProfileBinding
 
-/** Hồ sơ: hiện email đang đăng nhập và nút đăng xuất. */
+/** Hồ sơ: hiển thị thông tin người dùng đang đăng nhập và xử lý đăng xuất. */
 class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
@@ -28,7 +28,12 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Hiện tạm email từ Firebase/session, rồi ghi đè bằng dữ liệu cache trong Room.
         binding.tvEmail.text = viewModel.currentEmail ?: "Chưa đăng nhập"
+        viewModel.user.observe(viewLifecycleOwner) { u ->
+            if (u != null) binding.tvEmail.text = "${u.displayName}\n${u.email}"
+        }
+
         binding.btnLogout.setOnClickListener {
             viewModel.logout()
             findNavController().navigate(R.id.action_profile_to_login)
