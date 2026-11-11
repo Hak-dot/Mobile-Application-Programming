@@ -7,7 +7,21 @@
     <fragment
         android:id="@+id/exploreFragment"
         android:name="com.nhom.movieapp.explore.ui.ExploreFragment"
-        android:label="Khám phá" />
+        android:label="Khám phá">
+        <!-- Action điều hướng sang màn hình chi tiết kèm theo movieId -->
+        <action
+            android:id="@+id/action_explore_to_detail"
+            app:destination="@id/detailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/detailFragment"
+        android:name="detail.ui.DetailFragment"
+        android:label="Chi tiết phim">
+        <argument
+            android:name="movieId"
+            app:argType="integer" />
+    </fragment>
 
     <fragment
         android:id="@+id/watchlistFragment"
