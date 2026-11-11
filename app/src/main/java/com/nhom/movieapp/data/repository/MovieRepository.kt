@@ -1,11 +1,18 @@
 package com.nhom.movieapp.data.repository
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.nhom.movieapp.data.Resource
 import com.nhom.movieapp.data.local.MovieDao
 import com.nhom.movieapp.data.local.MovieEntity
+import com.nhom.movieapp.data.repository.MovieRepository
 import com.nhom.movieapp.data.remote.MovieDto
 import com.nhom.movieapp.data.remote.TmdbApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Room là nguồn dữ liệu chính (single source of truth).
@@ -54,3 +61,25 @@ class MovieRepository(
         const val CATEGORY_TOP_RATED = "top_rated"
     }
 }
+class MovieViewModel(private val repository: MovieRepository) : ViewModel(){
+    val moviesFlow: Flow<List<MovieEntity>> = repository.observeMovies(MovieRepository.CATEGORY_POPULAR)
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    init {
+        // Khi mở app, gọi hàm refresh để tải dữ liệu mới từ API về lưu vào Room
+        refreshMovies()
+    }
+
+    fun refreshMovies() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.refresh(MovieRepository.CATEGORY_POPULAR)
+            if (result is Resource.Error) {
+                _errorMessage.value = result.message
+            }
+            _isLoading.value = false
+}}}

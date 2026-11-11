@@ -11,6 +11,6 @@ class MovieApp : Application() {
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
 
     val movieRepository: MovieRepository by lazy {
-        MovieRepository(RetrofitClient.api, database.movieDao())
+        MovieRepository(RetrofitClient.apiService, database.movieDao())
     }
 }

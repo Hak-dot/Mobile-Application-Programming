@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.legacy.kapt)
     alias(libs.plugins.google.services)
+
 }
 
 val localProps = Properties().apply {
@@ -83,9 +84,11 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
 
     // Tải ảnh
     implementation("io.coil-kt:coil:2.7.0")
+//    implementation("com.github.bumptech.glide:glide:4.16.0")
 
     // Bảo mật
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
@@ -102,4 +105,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }
