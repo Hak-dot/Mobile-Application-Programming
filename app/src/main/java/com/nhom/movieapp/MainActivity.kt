@@ -8,10 +8,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.nhom.movieapp.databinding.ActivityMainBinding
 
-/**
- * Single Activity + Bottom Navigation.
- * Chưa đăng nhập thì mở thẳng màn Login, và ẩn thanh Bottom Navigation ở Login/Register.
- */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -21,9 +17,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val navHost = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHost.navController
+        // Sử dụng getFragment() chuẩn cho FragmentContainerView để tránh kẹt luồng và lỗi null
+        val navHostFragment = binding.navHostFragment.getFragment<NavHostFragment>()
+        val navController = navHostFragment.navController
 
         // Chọn màn hình bắt đầu tùy trạng thái đăng nhập.
         val graph = navController.navInflater.inflate(R.navigation.nav_graph)
@@ -33,8 +29,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.bottomNav.isVisible =
-                destination.id != R.id.loginFragment && destination.id != R.id.registerFragment
+            val showBottomNav = destination.id != R.id.loginFragment &&
+                    destination.id != R.id.registerFragment &&
+                    destination.id != R.id.detailFragment
+            binding.bottomNav.isVisible = showBottomNav
         }
     }
 }

@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.nhom.movieapp.MovieApp // Import Application của nhóm
@@ -57,16 +59,41 @@ class ExploreFragment : Fragment() {
         viewModel.refreshState.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    // Đang tải...
+                    binding.btnRetry.visibility = View.GONE
                 }
                 is Resource.Success -> {
-                    // Tải thành công
+                    binding.btnRetry.visibility = View.GONE
                 }
                 is Resource.Error -> {
                     // Hiển thị thông báo khi mất mạng hoặc lỗi server
                     Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show()
+                    binding.btnRetry.visibility = View.VISIBLE
                 }
             }
+        }
+        //Tự động đo chiều cao status bar và thêm padding cho layout để không bị che khuất camera
+        val rootView = binding.root // Hoặc tên biến root layout của bạn
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // Set padding top bằng đúng chiều cao của thanh trạng thái (status bar)
+            view.setPadding(view.paddingLeft, insets.top, view.paddingRight, view.paddingBottom)
+            windowInsets
+        }
+        // Xử lý sự kiện bấm nút Thử lại
+        binding.btnRetry.setOnClickListener {
+            // Gọi lại hàm refresh/fetch dữ liệu trong ViewModel (tùy thuộc vào hàm của nhóm bạn, ví dụ viewModel.refreshData())
+            Toast.makeText(requireContext(), "Đang thử kết nối lại...", Toast.LENGTH_SHORT).show()
+        }
+
+        // Xử lý chuyển đổi qua lại Popular ⇄ Top Rated (Lưu ý: Nếu ViewModel hỗ trợ đổi category động, hoặc nhóm đang dùng 2 ViewModel riêng)
+        binding.btnPopular.setOnClickListener {
+            Toast.makeText(requireContext(), "Đang xem Popular", Toast.LENGTH_SHORT).show()
+            // TODO: Load danh sách Popular
+        }
+
+        binding.btnTopRated.setOnClickListener {
+            Toast.makeText(requireContext(), "Đang xem Top Rated", Toast.LENGTH_SHORT).show()
+            // TODO: Load danh sách Top Rated
         }
     }
 
