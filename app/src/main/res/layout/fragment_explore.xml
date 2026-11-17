@@ -2,16 +2,60 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+    <!-- Nút chuyển đổi Popular ⇄ Top Rated -->
+    <LinearLayout
+        android:id="@+id/layoutToggle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+
+        <Button
+            android:id="@+id/btnPopular"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Popular"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btnTopRated"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Top Rated"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
 
     <!-- Thêm RecyclerView với đúng ID recyclerViewMovies -->
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMovies"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:paddingTop="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <Button
+        android:id="@+id/btnRetry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thử lại (Retry)"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="8dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
