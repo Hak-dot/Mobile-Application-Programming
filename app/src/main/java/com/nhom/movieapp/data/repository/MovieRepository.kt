@@ -1,18 +1,11 @@
 package com.nhom.movieapp.data.repository
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.nhom.movieapp.data.Resource
 import com.nhom.movieapp.data.local.MovieDao
 import com.nhom.movieapp.data.local.MovieEntity
-import com.nhom.movieapp.data.repository.MovieRepository
 import com.nhom.movieapp.data.remote.MovieDto
 import com.nhom.movieapp.data.remote.TmdbApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 /**
  * Room là nguồn dữ liệu chính (single source of truth).
@@ -37,20 +30,39 @@ class MovieRepository(
             }
             dao.replaceCategory(category, response.results.mapIndexed { i, dto -> dto.toEntity(category, i) })
             Resource.Success(Unit)
-        } catch (e: java.io.IOException) {
-            Resource.Error("Không có kết nối mạng. Đang hiển thị dữ liệu đã lưu.")
-        } catch (e: retrofit2.HttpException) {
-            Resource.Error("Lỗi máy chủ (${e.code()}). Vui lòng thử lại.")
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Đã xảy ra lỗi không xác định.")
+            Resource.Error("Lỗi kết nối mạng: ${e.localizedMessage ?: e.message}")
         }
+
+    suspend fun getMovieById(movieId: Int): MovieEntity? {
+        return dao.getMovieById(movieId)
+    }
+
+    /** Lấy chi tiết phim từ API và cập nhật vào Room cache. */
+    suspend fun fetchAndSaveMovieDetail(movieId: Int): Resource<MovieEntity> {
+        val cached = dao.getMovieById(movieId)
+        return try {
+            val dto = api.getMovieDetail(movieId)
+            val category = cached?.category ?: CATEGORY_POPULAR
+            val position = cached?.position ?: 0
+            val entity = dto.toEntity(category, position)
+            dao.insertAll(listOf(entity))
+            Resource.Success(entity)
+        } catch (e: Exception) {
+            if (cached != null) {
+                Resource.Success(cached)
+            } else {
+                Resource.Error("Không thể tải chi tiết phim: ${e.localizedMessage ?: e.message}")
+            }
+        }
+    }
 
     private fun MovieDto.toEntity(category: String, position: Int) = MovieEntity(
         id = id,
         category = category,
         title = title.orEmpty(),
         overview = overview?.takeIf { it.isNotBlank() } ?: "Chưa có mô tả.",
-        posterPath = posterPath,
+        posterPath = posterPath ?: backdropPath,
         releaseDate = releaseDate,
         voteAverage = voteAverage ?: 0.0,
         position = position
@@ -61,25 +73,3 @@ class MovieRepository(
         const val CATEGORY_TOP_RATED = "top_rated"
     }
 }
-class MovieViewModel(private val repository: MovieRepository) : ViewModel(){
-    val moviesFlow: Flow<List<MovieEntity>> = repository.observeMovies(MovieRepository.CATEGORY_POPULAR)
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
-    init {
-        // Khi mở app, gọi hàm refresh để tải dữ liệu mới từ API về lưu vào Room
-        refreshMovies()
-    }
-
-    fun refreshMovies() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = repository.refresh(MovieRepository.CATEGORY_POPULAR)
-            if (result is Resource.Error) {
-                _errorMessage.value = result.message
-            }
-            _isLoading.value = false
-}}}

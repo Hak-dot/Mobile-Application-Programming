@@ -80,20 +80,21 @@ class ExploreFragment : Fragment() {
             windowInsets
         }
         // Xử lý sự kiện bấm nút Thử lại
+        // Xử lý sự kiện bấm nút Thử lại
         binding.btnRetry.setOnClickListener {
-            // Gọi lại hàm refresh/fetch dữ liệu trong ViewModel (tùy thuộc vào hàm của nhóm bạn, ví dụ viewModel.refreshData())
             Toast.makeText(requireContext(), "Đang thử kết nối lại...", Toast.LENGTH_SHORT).show()
+            viewModel.refresh() // <--- GỌI HÀM REFRESH CỦA VIEWMODEL Ở ĐÂY
         }
 
-        // Xử lý chuyển đổi qua lại Popular ⇄ Top Rated (Lưu ý: Nếu ViewModel hỗ trợ đổi category động, hoặc nhóm đang dùng 2 ViewModel riêng)
+        // Xử lý chuyển đổi qua lại Popular ⇄ Top Rated
         binding.btnPopular.setOnClickListener {
             Toast.makeText(requireContext(), "Đang xem Popular", Toast.LENGTH_SHORT).show()
-            // TODO: Load danh sách Popular
+            viewModel.switchCategory(MovieRepository.CATEGORY_POPULAR) // <--- GỌI ĐỔI CATEGORY
         }
 
         binding.btnTopRated.setOnClickListener {
             Toast.makeText(requireContext(), "Đang xem Top Rated", Toast.LENGTH_SHORT).show()
-            // TODO: Load danh sách Top Rated
+            viewModel.switchCategory(MovieRepository.CATEGORY_TOP_RATED) // <--- GỌI ĐỔI CATEGORY
         }
     }
 
