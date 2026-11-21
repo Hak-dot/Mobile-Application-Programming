@@ -12,8 +12,8 @@ import androidx.room.RoomDatabase
 - và tăng `version` (hoặc gỡ cài đặt app khi đang phát triển).
  */
 @Database(
-    entities = [MovieEntity::class, UserEntity::class],
-    version = 2,
+    entities = [MovieEntity::class, UserEntity::class, WatchlistEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,7 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
     // Thêm dòng này để AuthViewModel có thể gọi userDao()
     abstract fun userDao(): UserDao
 
-    // abstract fun watchlistDao(): WatchlistDao  // bạn C thêm
+    abstract fun watchlistDao(): WatchlistDao  // bạn C thêm
 
     companion object {
         @Volatile

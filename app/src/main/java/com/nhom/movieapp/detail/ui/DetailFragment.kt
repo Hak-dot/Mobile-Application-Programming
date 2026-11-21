@@ -1,5 +1,7 @@
 package com.nhom.movieapp.detail.ui
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.nhom.movieapp.R
 import com.nhom.movieapp.MovieApp
 import com.nhom.movieapp.databinding.FragmentDetailBinding
 import com.nhom.movieapp.detail.viewmodel.DetailViewModel
@@ -24,7 +27,7 @@ class DetailFragment : Fragment() {
     private val viewModel: DetailViewModel by viewModels {
         val app = requireActivity().application as MovieApp
         val movieId = arguments?.getInt("movieId") ?: -1
-        DetailViewModel.Factory(app.movieRepository, movieId)
+        DetailViewModel.Factory(app.movieRepository, app.watchlistDao, movieId)
     }
 
     override fun onCreateView(
@@ -47,6 +50,27 @@ class DetailFragment : Fragment() {
         // Xử lý sự kiện bấm nút Back để quay lại màn hình trước
         binding.btnBack.setOnClickListener {
             findNavController().navigateUp()
+        }
+        // Lắng nghe trạng thái yêu thích để đổi icon / màu tim
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
+            if (isFav) {
+                binding.btnFavorite.setImageResource(R.drawable.ic_favorite)
+                binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.RED)
+            } else {
+                binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border)
+                binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.WHITE)
+            }
+        }
+
+// Bấm nút tim để thêm / xóa khỏi Watchlist
+        binding.btnFavorite.setOnClickListener {
+            val currentMovie = viewModel.movieDetail.value
+            if (currentMovie != null) {
+                viewModel.toggleFavorite(currentMovie)
+                val wasFav = viewModel.isFavorite.value == true
+                val msg = if (wasFav) "Đã xóa khỏi Watchlist" else "Đã thêm vào Watchlist"
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Lắng nghe dữ liệu chi tiết phim từ DetailViewModel

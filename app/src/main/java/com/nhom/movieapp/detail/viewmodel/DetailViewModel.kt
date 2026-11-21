@@ -7,11 +7,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.nhom.movieapp.data.Resource
 import com.nhom.movieapp.data.local.MovieEntity
+import com.nhom.movieapp.data.local.WatchlistDao
+import com.nhom.movieapp.data.local.WatchlistEntity
 import com.nhom.movieapp.data.repository.MovieRepository
 import kotlinx.coroutines.launch
 
 class DetailViewModel(
     private val movieRepository: MovieRepository,
+    private val watchlistDao: WatchlistDao,
     private val movieId: Int
 ) : ViewModel() {
 
@@ -54,15 +57,55 @@ class DetailViewModel(
             _isLoading.value = false
         }
     }
+    // Trong DetailViewModel.kt
+    private val _isFavorite = MutableLiveData(false)
+    val isFavorite: LiveData<Boolean> get() = _isFavorite
+
+    init {
+        if (movieId != -1) {
+            fetchMovieDetail(movieId)
+            checkFavoriteStatus(movieId)
+        }
+    }
+
+    private fun checkFavoriteStatus(id: Int) {
+        viewModelScope.launch {
+            // TODO: Đổi tên hàm cho khớp WatchlistDao của bạn C (ví dụ: watchlistDao.isFavorite(id) hoặc getById(id))
+            _isFavorite.value = watchlistDao.isFavorite(id)
+        }
+    }
+
+    fun toggleFavorite(movie: MovieEntity) {
+        viewModelScope.launch {
+            val current = _isFavorite.value == true
+            if (current) {
+                // TODO: Đổi sang hàm xóa khỏi watchlist của bạn C (ví dụ: watchlistDao.deleteById(movie.id))
+                watchlistDao.deleteById(movie.id)
+                _isFavorite.value = false
+            } else {
+                // TODO: Map MovieEntity sang WatchlistEntity của bạn C rồi insert
+                val item = WatchlistEntity(
+                    id = movie.id,
+                    title = movie.title,
+                    posterPath = movie.posterPath,
+                    releaseDate = movie.releaseDate,
+                    voteAverage = movie.voteAverage
+                )
+                watchlistDao.insert(item)
+                _isFavorite.value = true
+            }
+        }
+    }
 
     class Factory(
         private val repository: MovieRepository,
+        private val watchlistDao: WatchlistDao,
         private val movieId: Int
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(DetailViewModel::class.java)) {
-                return DetailViewModel(repository, movieId) as T
+                return DetailViewModel(repository, watchlistDao, movieId) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
