@@ -10,22 +10,18 @@ import androidx.lifecycle.viewModelScope
 import com.nhom.movieapp.data.Resource
 import com.nhom.movieapp.data.local.MovieEntity
 import com.nhom.movieapp.data.repository.MovieRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-//import androidx.lifecycle.Transformations
 
-/**
- * Ví dụ ViewModel cho bạn B (Khám phá phim).
- * - movies: LiveData lấy từ Room, tự cập nhật UI khi cache thay đổi.
- * - refreshState: Loading / Success / Error của lần gọi API.
- */
 class MovieViewModel(
     private val repository: MovieRepository,
     initialCategory: String = MovieRepository.CATEGORY_POPULAR
 ) : ViewModel() {
 
     private val _currentCategory = MutableLiveData(initialCategory)
+    val currentCategory: LiveData<String> = _currentCategory
 
-    // Khai báo trực tiếp không cần Transformations
+    // Tự động đổi luồng dữ liệu Room khi category thay đổi
     val movies: LiveData<List<MovieEntity>> = _currentCategory.switchMap { cat ->
         repository.observeMovies(cat).asLiveData()
     }
@@ -33,11 +29,17 @@ class MovieViewModel(
     private val _refreshState = MutableLiveData<Resource<Unit>>()
     val refreshState: LiveData<Resource<Unit>> = _refreshState
 
+    private var refreshJob: Job? = null
+
     init {
         refresh()
     }
 
     fun switchCategory(newCategory: String) {
+        if (newCategory != MovieRepository.CATEGORY_POPULAR &&
+            newCategory != MovieRepository.CATEGORY_TOP_RATED
+        ) return
+
         if (_currentCategory.value != newCategory) {
             _currentCategory.value = newCategory
             refresh()
@@ -46,8 +48,10 @@ class MovieViewModel(
 
     fun refresh() {
         val cat = _currentCategory.value ?: MovieRepository.CATEGORY_POPULAR
+        // Hủy job cũ nếu người dùng bấm chuyển tab liên tục để tránh ghi đè trạng thái sai
+        refreshJob?.cancel()
         _refreshState.value = Resource.Loading
-        viewModelScope.launch {
+        refreshJob = viewModelScope.launch {
             _refreshState.value = repository.refresh(cat)
         }
     }
@@ -57,7 +61,11 @@ class MovieViewModel(
         private val category: String = MovieRepository.CATEGORY_POPULAR
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            MovieViewModel(repository, category) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MovieViewModel::class.java)) {
+                return MovieViewModel(repository, category) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        }
     }
 }
