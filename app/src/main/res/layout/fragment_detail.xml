@@ -9,6 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
+        <!--Nút Back-->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="48dp"
@@ -21,6 +22,21 @@
             android:translationZ="10dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
+
+        <!--Nút Tim thêm vào WatchList-->
+        <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Thêm vào Watchlist"
+            android:elevation="8dp"
+            android:src="@drawable/ic_favorite_border"
+            android:translationZ="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Ảnh nền backdrop ngang -->
         <ImageView

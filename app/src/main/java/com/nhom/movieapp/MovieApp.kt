@@ -2,6 +2,7 @@ package com.nhom.movieapp
 
 import android.app.Application
 import com.nhom.movieapp.data.local.AppDatabase
+import com.nhom.movieapp.data.local.WatchlistDao
 import com.nhom.movieapp.data.remote.RetrofitClient
 import com.nhom.movieapp.data.repository.MovieRepository
 
@@ -12,5 +13,8 @@ class MovieApp : Application() {
 
     val movieRepository: MovieRepository by lazy {
         MovieRepository(RetrofitClient.apiService, database.movieDao())
+
     }
-}
+    val watchlistDao: WatchlistDao by lazy {
+        database.watchlistDao()
+}}
