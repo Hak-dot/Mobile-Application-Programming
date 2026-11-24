@@ -13,8 +13,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
-import com.nhom.movieapp.R
 import com.nhom.movieapp.MovieApp
+import com.nhom.movieapp.R
 import com.nhom.movieapp.databinding.FragmentDetailBinding
 import com.nhom.movieapp.detail.viewmodel.DetailViewModel
 
