@@ -1,30 +1,34 @@
-
 package com.nhom.movieapp.detail.ui
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
-import com.nhom.movieapp.data.local.WatchlistEntity
-import com.nhom.movieapp.data.remote.RetrofitClient
+import com.nhom.movieapp.MovieApp
+import com.nhom.movieapp.R
 import com.nhom.movieapp.databinding.FragmentDetailBinding
-import com.nhom.movieapp.watchlist.ui.WatchlistViewModel
-import kotlinx.coroutines.launch
+import com.nhom.movieapp.detail.viewmodel.DetailViewModel
 
 class DetailFragment : Fragment() {
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
 
-    private val watchlistViewModel: WatchlistViewModel by viewModels()
-
-    private var currentMovie: WatchlistEntity? = null
+    // Khởi tạo DetailViewModel qua Factory, nhận movieId từ Bundle do ExploreFragment truyền sang
+    private val viewModel: DetailViewModel by viewModels {
+        val app = requireActivity().application as MovieApp
+        val movieId = arguments?.getInt("movieId") ?: -1
+        DetailViewModel.Factory(app.movieRepository, app.watchlistDao, movieId)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,88 +42,82 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Đảm bảo nút back không bị che bởi status bar
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, insets.top, v.paddingRight, v.paddingBottom)
+            windowInsets
+        }
+
+        // Xử lý sự kiện bấm nút Back để quay lại màn hình trước
         binding.btnBack.setOnClickListener {
             findNavController().navigateUp()
         }
 
-        val movieId = arguments?.getInt("movieId") ?: -1
-
-        binding.btnAddWatchlist.isEnabled = false
-
-        if (movieId == -1) {
-            Toast.makeText(
-                requireContext(),
-                "Không tìm thấy phim",
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val movie = RetrofitClient.apiService.getMovieDetail(movieId)
-
-                currentMovie = WatchlistEntity(
-                    id = movie.id,
-                    title = movie.title.orEmpty(),
-                    overview = movie.overview.orEmpty(),
-                    posterPath = movie.posterPath,
-                    releaseDate = movie.releaseDate,
-                    voteAverage = movie.voteAverage ?: 0.0,
-                    isWatched = false
-                )
-
-                // Hiển thị tên phim
-                binding.tvMovieTitle.text =
-                    movie.title ?: "Không có tên phim"
-
-                // Hiển thị điểm đánh giá
-                binding.tvMovieRating.text =
-                    "⭐ Đánh giá: ${String.format("%.1f", movie.voteAverage ?: 0.0)}/10"
-
-                // Hiển thị ngày phát hành
-                binding.tvReleaseDate.text =
-                    "Ngày phát hành: ${movie.releaseDate ?: "Chưa cập nhật"}"
-
-                // Hiển thị mô tả
-                binding.tvMovieOverview.text =
-                    movie.overview?.takeIf { it.isNotBlank() }
-                        ?: "Chưa có mô tả cho phim này."
-
-                // Tải poster bằng Glide
-                val posterUrl = movie.posterPath?.let {
-                    "${RetrofitClient.IMAGE_BASE_URL}$it"
-                }
-
-                Glide.with(this@DetailFragment)
-                    .load(posterUrl)
-                    .centerInside()
-                    .into(binding.imageMoviePoster)
-
-                binding.btnAddWatchlist.isEnabled = true
-
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Không tải được thông tin phim: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+        // Lắng nghe trạng thái yêu thích để đổi icon / màu tim và button Watchlist
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
+            if (isFav) {
+                binding.btnFavorite.setImageResource(R.drawable.ic_favorite)
+                binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.RED)
+                binding.btnAddWatchlist.text = "Đã thêm vào Watchlist"
+            } else {
+                binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border)
+                binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.WHITE)
+                binding.btnAddWatchlist.text = "+ Thêm vào Watchlist"
             }
         }
 
-        binding.btnAddWatchlist.setOnClickListener {
-            val movie = currentMovie ?: return@setOnClickListener
+        // Bấm nút tim hoặc nút Thêm vào Watchlist để thêm / xóa khỏi Watchlist
+        val onToggleWatchlist = View.OnClickListener {
+            val currentMovie = viewModel.movieDetail.value
+            if (currentMovie != null) {
+                viewModel.toggleFavorite(currentMovie)
+                val isCurrentlyFav = viewModel.isFavorite.value == true
+                val msg = if (isCurrentlyFav) "Đã xóa khỏi Watchlist" else "Đã thêm vào Watchlist"
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Đang tải dữ liệu phim...", Toast.LENGTH_SHORT).show()
+            }
+        }
 
-            watchlistViewModel.addMovie(movie)
+        binding.btnFavorite.setOnClickListener(onToggleWatchlist)
+        binding.btnAddWatchlist.setOnClickListener(onToggleWatchlist)
 
-            Toast.makeText(
-                requireContext(),
-                "Đã thêm ${movie.title} vào Watchlist",
-                Toast.LENGTH_SHORT
-            ).show()
+        // Lắng nghe dữ liệu chi tiết phim từ DetailViewModel
+        viewModel.movieDetail.observe(viewLifecycleOwner) { movie ->
+            if (movie != null) {
+                binding.tvTitle.text = movie.title.ifEmpty { "Đang cập nhật..." }
 
-            binding.btnAddWatchlist.text = "Đã thêm vào Watchlist"
-            binding.btnAddWatchlist.isEnabled = false
+                val releaseDate = if (!movie.releaseDate.isNullOrEmpty()) movie.releaseDate else "N/A"
+                binding.tvReleaseDate.text = "Ngày phát hành: $releaseDate"
+
+                binding.tvRating.text = String.format("⭐ %.1f/10", movie.voteAverage)
+
+                binding.tvOverview.text = if (!movie.overview.isNullOrEmpty()) {
+                    movie.overview
+                } else {
+                    "Chưa có mô tả chi tiết cho bộ phim này."
+                }
+
+                if (!movie.posterPath.isNullOrEmpty()) {
+                    val path = if (movie.posterPath.startsWith("/")) movie.posterPath else "/${movie.posterPath}"
+                    val posterUrl = "https://image.tmdb.org/t/p/w500$path"
+
+                    Glide.with(this)
+                        .load(posterUrl)
+                        .placeholder(android.R.color.darker_gray)
+                        .error(android.R.color.darker_gray)
+                        .into(binding.imgBackdrop)
+                } else {
+                    binding.imgBackdrop.setImageResource(android.R.color.darker_gray)
+                }
+            }
+        }
+
+        viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

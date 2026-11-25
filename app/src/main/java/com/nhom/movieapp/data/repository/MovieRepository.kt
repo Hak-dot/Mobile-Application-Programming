@@ -1,4 +1,3 @@
-
 package com.nhom.movieapp.data.repository
 
 import com.nhom.movieapp.data.Resource
@@ -25,22 +24,33 @@ class MovieRepository(
                 CATEGORY_TOP_RATED -> api.getTopRated()
                 else -> api.getPopular()
             }
-
-            dao.replaceCategory(
-                category,
-                response.results.mapIndexed { index, dto ->
-                    dto.toEntity(category, index)
-                }
-            )
-
+            dao.replaceCategory(category, response.results.mapIndexed { i, dto -> dto.toEntity(category, i) })
             Resource.Success(Unit)
-
-        } catch (e: java.io.IOException) {
-            Resource.Error("Không có kết nối mạng.")
-        } catch (e: retrofit2.HttpException) {
-            Resource.Error("Lỗi máy chủ: ${e.code()}")
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Đã xảy ra lỗi.")
+            Resource.Error("Lỗi kết nối mạng: ${e.localizedMessage ?: e.message}")
+        }
+    }
+
+    suspend fun getMovieById(movieId: Int): MovieEntity? {
+        return dao.getMovieById(movieId)
+    }
+
+    /** Lấy chi tiết phim từ API và cập nhật vào Room cache. */
+    suspend fun fetchAndSaveMovieDetail(movieId: Int): Resource<MovieEntity> {
+        val cached = dao.getMovieById(movieId)
+        return try {
+            val dto = api.getMovieDetail(movieId)
+            val category = cached?.category ?: CATEGORY_POPULAR
+            val position = cached?.position ?: 0
+            val entity = dto.toEntity(category, position)
+            dao.insertAll(listOf(entity))
+            Resource.Success(entity)
+        } catch (e: Exception) {
+            if (cached != null) {
+                Resource.Success(cached)
+            } else {
+                Resource.Error("Không thể tải chi tiết phim: ${e.localizedMessage ?: e.message}")
+            }
         }
     }
 
@@ -48,13 +58,10 @@ class MovieRepository(
     suspend fun searchMovies(query: String): Resource<List<MovieEntity>> {
         return try {
             val response = api.searchMovies(query = query)
-
             val movies = response.results.mapIndexed { index, dto ->
                 dto.toEntity(CATEGORY_SEARCH, index)
             }
-
             Resource.Success(movies)
-
         } catch (e: java.io.IOException) {
             Resource.Error("Không có kết nối mạng.")
         } catch (e: retrofit2.HttpException) {
@@ -64,16 +71,12 @@ class MovieRepository(
         }
     }
 
-    private fun MovieDto.toEntity(
-        category: String,
-        position: Int
-    ) = MovieEntity(
+    private fun MovieDto.toEntity(category: String, position: Int) = MovieEntity(
         id = id,
         category = category,
         title = title.orEmpty(),
-        overview = overview?.takeIf { it.isNotBlank() }
-            ?: "Chưa có mô tả.",
-        posterPath = posterPath,
+        overview = overview?.takeIf { it.isNotBlank() } ?: "Chưa có mô tả.",
+        posterPath = posterPath ?: backdropPath,
         releaseDate = releaseDate,
         voteAverage = voteAverage ?: 0.0,
         position = position

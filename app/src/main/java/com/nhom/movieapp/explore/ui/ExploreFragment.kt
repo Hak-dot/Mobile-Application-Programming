@@ -1,11 +1,14 @@
-
 package com.nhom.movieapp.explore.ui
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -58,21 +61,23 @@ class ExploreFragment : Fragment() {
 
         binding.recyclerViewMovies.adapter = adapter
 
-        // Hiển thị danh sách phim phổ biến
+        // 1. Lắng nghe dữ liệu phim từ Room Database theo category được chọn
         viewModel.movies.observe(viewLifecycleOwner) { movieList ->
             if (binding.etSearch.text.isNullOrBlank()) {
-                adapter.submitList(movieList)
+                movieList?.let {
+                    adapter.submitList(it)
+                }
             }
         }
 
-        // Hiển thị kết quả tìm kiếm
+        // 2. Hiển thị kết quả tìm kiếm nếu người dùng nhập từ khóa
         viewModel.searchResults.observe(viewLifecycleOwner) { results ->
             if (!binding.etSearch.text.isNullOrBlank()) {
                 adapter.submitList(results)
             }
         }
 
-        // Xử lý lỗi tìm kiếm
+        // 3. Xử lý trạng thái và lỗi tìm kiếm
         viewModel.searchState.observe(viewLifecycleOwner) { resource ->
             if (resource is Resource.Error) {
                 Toast.makeText(
@@ -83,7 +88,7 @@ class ExploreFragment : Fragment() {
             }
         }
 
-        // Khi nhập từ khóa, gọi API tìm kiếm
+        // 4. Lắng nghe ô tìm kiếm
         binding.etSearch.doAfterTextChanged { editable ->
             val keyword = editable?.toString()?.trim().orEmpty()
 
@@ -94,16 +99,65 @@ class ExploreFragment : Fragment() {
             }
         }
 
-        // Trạng thái tải danh sách phim
+        // 5. Cập nhật trạng thái nổi bật cho 2 nút Popular / Top Rated
+        viewModel.currentCategory.observe(viewLifecycleOwner) { category ->
+            val isPopular = category == MovieRepository.CATEGORY_POPULAR
+            updateCategoryButtonState(isPopularSelected = isPopular)
+        }
+
+        // 6. Lắng nghe trạng thái khi gọi API làm mới cache
         viewModel.refreshState.observe(viewLifecycleOwner) { resource ->
-            if (resource is Resource.Error) {
-                Toast.makeText(
-                    requireContext(),
-                    resource.message,
-                    Toast.LENGTH_SHORT
-                ).show()
+            when (resource) {
+                is Resource.Loading -> {
+                    binding.btnRetry.visibility = View.GONE
+                }
+                is Resource.Success -> {
+                    binding.btnRetry.visibility = View.GONE
+                }
+                is Resource.Error -> {
+                    Toast.makeText(requireContext(), resource.message, Toast.LENGTH_SHORT).show()
+                    binding.btnRetry.visibility = View.VISIBLE
+                }
             }
         }
+
+        // Tự động đo chiều cao status bar và thêm padding cho layout
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { root, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            root.setPadding(root.paddingLeft, insets.top, root.paddingRight, root.paddingBottom)
+            windowInsets
+        }
+
+        binding.btnRetry.setOnClickListener {
+            Toast.makeText(requireContext(), "Đang thử kết nối lại...", Toast.LENGTH_SHORT).show()
+            viewModel.refresh()
+        }
+
+        binding.btnPopular.setOnClickListener {
+            binding.etSearch.text?.clear()
+            viewModel.switchCategory(MovieRepository.CATEGORY_POPULAR)
+        }
+
+        binding.btnTopRated.setOnClickListener {
+            binding.etSearch.text?.clear()
+            viewModel.switchCategory(MovieRepository.CATEGORY_TOP_RATED)
+        }
+    }
+
+    private fun updateCategoryButtonState(isPopularSelected: Boolean) {
+        val activeBg = ColorStateList.valueOf(Color.parseColor("#6750A4"))
+        val inactiveBg = ColorStateList.valueOf(Color.parseColor("#E7E0EC"))
+        val activeText = Color.WHITE
+        val inactiveText = Color.parseColor("#1D1B20")
+
+        binding.btnPopular.isSelected = isPopularSelected
+        binding.btnTopRated.isSelected = !isPopularSelected
+
+        binding.btnPopular.backgroundTintList = if (isPopularSelected) activeBg else inactiveBg
+        binding.btnPopular.setTextColor(if (isPopularSelected) activeText else inactiveText)
+
+        binding.btnTopRated.backgroundTintList = if (!isPopularSelected) activeBg else inactiveBg
+        binding.btnTopRated.setTextColor(if (!isPopularSelected) activeText else inactiveText)
     }
 
     override fun onDestroyView() {

@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.nhom.movieapp.data.local.MovieEntity
-import com.nhom.movieapp.databinding.ItemMovieBinding // Đảm bảo file layout item của bạn tên là item_movie.xml
+import com.nhom.movieapp.databinding.ItemMovieBinding
 
 class MovieAdapter(
     private val onItemClick: (MovieEntity) -> Unit
@@ -19,10 +19,16 @@ class MovieAdapter(
         fun bind(movie: MovieEntity) {
             binding.textTitle.text = movie.title
 
-            // Load ảnh poster bằng Glide từ TMDB image base url
-            val posterUrl = "https://image.tmdb.org/t/p/w500${movie.posterPath}"
+            val posterPath = movie.posterPath
+            val posterUrl = if (!posterPath.isNullOrEmpty()) {
+                if (posterPath.startsWith("/")) "https://image.tmdb.org/t/p/w500$posterPath"
+                else "https://image.tmdb.org/t/p/w500/$posterPath"
+            } else null
+
             Glide.with(binding.root.context)
                 .load(posterUrl)
+                .placeholder(android.R.color.darker_gray)
+                .error(android.R.color.darker_gray)
                 .into(binding.imagePoster)
 
             binding.root.setOnClickListener {
