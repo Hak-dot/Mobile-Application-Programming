@@ -31,7 +31,9 @@ class DetailFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentDetailBinding.inflate(inflater, container, false)
         return binding.root
@@ -51,27 +53,35 @@ class DetailFragment : Fragment() {
         binding.btnBack.setOnClickListener {
             findNavController().navigateUp()
         }
-        // Lắng nghe trạng thái yêu thích để đổi icon / màu tim
+
+        // Lắng nghe trạng thái yêu thích để đổi icon / màu tim và button Watchlist
         viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
             if (isFav) {
                 binding.btnFavorite.setImageResource(R.drawable.ic_favorite)
                 binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.RED)
+                binding.btnAddWatchlist.text = "Đã thêm vào Watchlist"
             } else {
                 binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border)
                 binding.btnFavorite.imageTintList = ColorStateList.valueOf(Color.WHITE)
+                binding.btnAddWatchlist.text = "+ Thêm vào Watchlist"
             }
         }
 
-// Bấm nút tim để thêm / xóa khỏi Watchlist
-        binding.btnFavorite.setOnClickListener {
+        // Bấm nút tim hoặc nút Thêm vào Watchlist để thêm / xóa khỏi Watchlist
+        val onToggleWatchlist = View.OnClickListener {
             val currentMovie = viewModel.movieDetail.value
             if (currentMovie != null) {
                 viewModel.toggleFavorite(currentMovie)
-                val wasFav = viewModel.isFavorite.value == true
-                val msg = if (wasFav) "Đã xóa khỏi Watchlist" else "Đã thêm vào Watchlist"
+                val isCurrentlyFav = viewModel.isFavorite.value == true
+                val msg = if (isCurrentlyFav) "Đã xóa khỏi Watchlist" else "Đã thêm vào Watchlist"
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Đang tải dữ liệu phim...", Toast.LENGTH_SHORT).show()
             }
         }
+
+        binding.btnFavorite.setOnClickListener(onToggleWatchlist)
+        binding.btnAddWatchlist.setOnClickListener(onToggleWatchlist)
 
         // Lắng nghe dữ liệu chi tiết phim từ DetailViewModel
         viewModel.movieDetail.observe(viewLifecycleOwner) { movie ->
@@ -79,7 +89,7 @@ class DetailFragment : Fragment() {
                 binding.tvTitle.text = movie.title.ifEmpty { "Đang cập nhật..." }
 
                 val releaseDate = if (!movie.releaseDate.isNullOrEmpty()) movie.releaseDate else "N/A"
-                binding.tvReleaseDate.text = "Ngày chiếu: $releaseDate"
+                binding.tvReleaseDate.text = "Ngày phát hành: $releaseDate"
 
                 binding.tvRating.text = String.format("⭐ %.1f/10", movie.voteAverage)
 

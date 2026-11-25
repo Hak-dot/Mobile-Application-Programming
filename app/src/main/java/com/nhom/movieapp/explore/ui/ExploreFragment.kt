@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -27,11 +28,16 @@ class ExploreFragment : Fragment() {
 
     private val viewModel: MovieViewModel by viewModels {
         val app = requireActivity().application as MovieApp
-        MovieViewModel.Factory(app.movieRepository, MovieRepository.CATEGORY_POPULAR)
+        MovieViewModel.Factory(
+            app.movieRepository,
+            MovieRepository.CATEGORY_POPULAR
+        )
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentExploreBinding.inflate(inflater, container, false)
         return binding.root
@@ -44,27 +50,62 @@ class ExploreFragment : Fragment() {
             val bundle = Bundle().apply {
                 putInt("movieId", movie.id)
             }
-            findNavController().navigate(R.id.action_explore_to_detail, bundle)
+            findNavController().navigate(
+                R.id.action_explore_to_detail,
+                bundle
+            )
         }
-        binding.recyclerViewMovies.layoutManager = LinearLayoutManager(requireContext())
+
+        binding.recyclerViewMovies.layoutManager =
+            LinearLayoutManager(requireContext())
+
         binding.recyclerViewMovies.adapter = adapter
 
-        // 1. Lắng nghe dữ liệu phim từ Room Database
+        // 1. Lắng nghe dữ liệu phim từ Room Database theo category được chọn
         viewModel.movies.observe(viewLifecycleOwner) { movieList ->
-            movieList?.let {
-                adapter.submitList(it) {
-                    binding.recyclerViewMovies.scrollToPosition(0)
+            if (binding.etSearch.text.isNullOrBlank()) {
+                movieList?.let {
+                    adapter.submitList(it)
                 }
             }
         }
 
-        // 2. Cập nhật trạng thái nổi bật cho 2 nút Popular / Top Rated
+        // 2. Hiển thị kết quả tìm kiếm nếu người dùng nhập từ khóa
+        viewModel.searchResults.observe(viewLifecycleOwner) { results ->
+            if (!binding.etSearch.text.isNullOrBlank()) {
+                adapter.submitList(results)
+            }
+        }
+
+        // 3. Xử lý trạng thái và lỗi tìm kiếm
+        viewModel.searchState.observe(viewLifecycleOwner) { resource ->
+            if (resource is Resource.Error) {
+                Toast.makeText(
+                    requireContext(),
+                    resource.message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        // 4. Lắng nghe ô tìm kiếm
+        binding.etSearch.doAfterTextChanged { editable ->
+            val keyword = editable?.toString()?.trim().orEmpty()
+
+            if (keyword.isEmpty()) {
+                adapter.submitList(viewModel.movies.value)
+            } else if (keyword.length >= 2) {
+                viewModel.searchMovies(keyword)
+            }
+        }
+
+        // 5. Cập nhật trạng thái nổi bật cho 2 nút Popular / Top Rated
         viewModel.currentCategory.observe(viewLifecycleOwner) { category ->
             val isPopular = category == MovieRepository.CATEGORY_POPULAR
             updateCategoryButtonState(isPopularSelected = isPopular)
         }
 
-        // 3. Lắng nghe trạng thái khi gọi API làm mới cache
+        // 6. Lắng nghe trạng thái khi gọi API làm mới cache
         viewModel.refreshState.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
@@ -93,10 +134,12 @@ class ExploreFragment : Fragment() {
         }
 
         binding.btnPopular.setOnClickListener {
+            binding.etSearch.text?.clear()
             viewModel.switchCategory(MovieRepository.CATEGORY_POPULAR)
         }
 
         binding.btnTopRated.setOnClickListener {
+            binding.etSearch.text?.clear()
             viewModel.switchCategory(MovieRepository.CATEGORY_TOP_RATED)
         }
     }

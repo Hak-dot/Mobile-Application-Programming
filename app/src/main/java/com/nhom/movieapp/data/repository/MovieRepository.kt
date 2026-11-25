@@ -7,10 +7,6 @@ import com.nhom.movieapp.data.remote.MovieDto
 import com.nhom.movieapp.data.remote.TmdbApi
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Room là nguồn dữ liệu chính (single source of truth).
- * API chỉ dùng để làm mới cache. Mất mạng thì UI vẫn đọc được dữ liệu đã lưu.
- */
 class MovieRepository(
     private val api: TmdbApi,
     private val dao: MovieDao
@@ -19,11 +15,11 @@ class MovieRepository(
     fun observeMovies(category: String): Flow<List<MovieEntity>> =
         dao.observeByCategory(category)
 
-    fun observeMovie(id: Int): Flow<MovieEntity?> = dao.observeById(id)
+    fun observeMovie(id: Int): Flow<MovieEntity?> =
+        dao.observeById(id)
 
-    /** Gọi API rồi ghi đè cache. Trả về Success hoặc Error, không ném exception ra ngoài. */
-    suspend fun refresh(category: String): Resource<Unit> =
-        try {
+    suspend fun refresh(category: String): Resource<Unit> {
+        return try {
             val response = when (category) {
                 CATEGORY_TOP_RATED -> api.getTopRated()
                 else -> api.getPopular()
@@ -33,6 +29,7 @@ class MovieRepository(
         } catch (e: Exception) {
             Resource.Error("Lỗi kết nối mạng: ${e.localizedMessage ?: e.message}")
         }
+    }
 
     suspend fun getMovieById(movieId: Int): MovieEntity? {
         return dao.getMovieById(movieId)
@@ -57,6 +54,23 @@ class MovieRepository(
         }
     }
 
+    // TÌM KIẾM PHIM
+    suspend fun searchMovies(query: String): Resource<List<MovieEntity>> {
+        return try {
+            val response = api.searchMovies(query = query)
+            val movies = response.results.mapIndexed { index, dto ->
+                dto.toEntity(CATEGORY_SEARCH, index)
+            }
+            Resource.Success(movies)
+        } catch (e: java.io.IOException) {
+            Resource.Error("Không có kết nối mạng.")
+        } catch (e: retrofit2.HttpException) {
+            Resource.Error("Lỗi máy chủ: ${e.code()}")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Đã xảy ra lỗi.")
+        }
+    }
+
     private fun MovieDto.toEntity(category: String, position: Int) = MovieEntity(
         id = id,
         category = category,
@@ -71,5 +85,6 @@ class MovieRepository(
     companion object {
         const val CATEGORY_POPULAR = "popular"
         const val CATEGORY_TOP_RATED = "top_rated"
+        const val CATEGORY_SEARCH = "search"
     }
 }

@@ -13,8 +13,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    const val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
     private const val BASE_URL = "https://api.themoviedb.org/3/"
+
+    const val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
     val apiService: TmdbApi by lazy {
         val client = OkHttpClient.Builder()

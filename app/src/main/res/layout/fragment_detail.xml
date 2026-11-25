@@ -9,27 +9,30 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
-        <!--Nút Back-->
+
+        <!-- Nút Back -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back" app:tint="@android:color/black"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@android:color/black"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
             android:elevation="8dp"
             android:translationZ="10dp"
+            android:contentDescription="Quay lại"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
-        <!--Nút Tim thêm vào WatchList-->
+        <!-- Nút Tim thêm vào Watchlist -->
         <ImageButton
             android:id="@+id/btnFavorite"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Thêm vào Watchlist"
             android:elevation="8dp"
@@ -38,12 +41,13 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Ảnh nền backdrop ngang -->
+        <!-- Ảnh nền backdrop / poster phim -->
         <ImageView
             android:id="@+id/imgBackdrop"
             android:layout_width="0dp"
-            android:layout_height="220dp"
+            android:layout_height="240dp"
             android:scaleType="centerCrop"
+            android:contentDescription="Poster phim"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -82,17 +86,43 @@
             app:layout_constraintStart_toEndOf="@id/tvReleaseDate"
             app:layout_constraintTop_toTopOf="@id/tvReleaseDate" />
 
+        <!-- Nội dung phim (Tiêu đề phần mô tả) -->
+        <TextView
+            android:id="@+id/tvOverviewLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Nội dung phim"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvReleaseDate" />
+
         <!-- Mô tả chi tiết (Overview) -->
         <TextView
             android:id="@+id/tvOverview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:lineSpacingExtra="4dp"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvReleaseDate" />
+            app:layout_constraintTop_toBottomOf="@id/tvOverviewLabel" />
+
+        <!-- Nút Thêm vào Watchlist ở dưới -->
+        <Button
+            android:id="@+id/btnAddWatchlist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            android:text="Thêm vào Watchlist"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvOverview" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

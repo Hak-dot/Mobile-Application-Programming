@@ -6,13 +6,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 /**
-- Room Database chuẩn Singleton.
-
-- Khi thêm Entity mới (UserEntity, WatchlistEntity...), thêm vào `entities`
-- và tăng `version` (hoặc gỡ cài đặt app khi đang phát triển).
+ * Room Database chuẩn Singleton.
+ * Khi thêm Entity mới (UserEntity, WatchlistEntity...), thêm vào `entities`
+ * và tăng `version` (hoặc gỡ cài đặt app khi đang phát triển).
  */
 @Database(
-    entities = [MovieEntity::class, UserEntity::class, WatchlistEntity::class],
+    entities = [
+        MovieEntity::class,
+        UserEntity::class,
+        WatchlistEntity::class
+    ],
     version = 3,
     exportSchema = false
 )
@@ -20,10 +23,9 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun movieDao(): MovieDao
 
-    // Thêm dòng này để AuthViewModel có thể gọi userDao()
     abstract fun userDao(): UserDao
 
-    abstract fun watchlistDao(): WatchlistDao  // bạn C thêm
+    abstract fun watchlistDao(): WatchlistDao
 
     companion object {
         @Volatile
@@ -36,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "movie_app.db"
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }
             }

@@ -7,7 +7,9 @@ import androidx.room.PrimaryKey
 data class WatchlistEntity(
     @PrimaryKey val id: Int,
     val title: String,
+    val overview: String = "",
     val posterPath: String?,
     val releaseDate: String?,
-    val voteAverage: Double
+    val voteAverage: Double,
+    val isWatched: Boolean = false
 )
