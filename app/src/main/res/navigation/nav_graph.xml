@@ -8,7 +8,7 @@
         android:id="@+id/exploreFragment"
         android:name="com.nhom.movieapp.explore.ui.ExploreFragment"
         android:label="Khám phá">
-        <!-- Action điều hướng sang màn hình chi tiết kèm theo movieId -->
+
         <action
             android:id="@+id/action_explore_to_detail"
             app:destination="@id/detailFragment" />
@@ -16,8 +16,9 @@
 
     <fragment
         android:id="@+id/detailFragment"
-        android:name="detail.ui.DetailFragment"
+        android:name="com.nhom.movieapp.detail.ui.DetailFragment"
         android:label="Chi tiết phim">
+
         <argument
             android:name="movieId"
             app:argType="integer" />
@@ -32,6 +33,7 @@
         android:id="@+id/profileFragment"
         android:name="com.nhom.movieapp.auth.ui.ProfileFragment"
         android:label="Hồ sơ">
+
         <action
             android:id="@+id/action_profile_to_login"
             app:destination="@id/loginFragment"
@@ -43,9 +45,11 @@
         android:id="@+id/loginFragment"
         android:name="com.nhom.movieapp.auth.ui.LoginFragment"
         android:label="Đăng nhập">
+
         <action
             android:id="@+id/action_login_to_register"
             app:destination="@id/registerFragment" />
+
         <action
             android:id="@+id/action_login_to_explore"
             app:destination="@id/exploreFragment"
@@ -57,6 +61,7 @@
         android:id="@+id/registerFragment"
         android:name="com.nhom.movieapp.auth.ui.RegisterFragment"
         android:label="Đăng ký">
+
         <action
             android:id="@+id/action_register_to_explore"
             app:destination="@id/exploreFragment"

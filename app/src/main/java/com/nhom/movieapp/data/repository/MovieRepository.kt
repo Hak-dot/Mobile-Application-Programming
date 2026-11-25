@@ -1,23 +1,13 @@
+
 package com.nhom.movieapp.data.repository
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.nhom.movieapp.data.Resource
 import com.nhom.movieapp.data.local.MovieDao
 import com.nhom.movieapp.data.local.MovieEntity
-import com.nhom.movieapp.data.repository.MovieRepository
 import com.nhom.movieapp.data.remote.MovieDto
 import com.nhom.movieapp.data.remote.TmdbApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
-/**
- * Room là nguồn dữ liệu chính (single source of truth).
- * API chỉ dùng để làm mới cache. Mất mạng thì UI vẫn đọc được dữ liệu đã lưu.
- */
 class MovieRepository(
     private val api: TmdbApi,
     private val dao: MovieDao
@@ -26,30 +16,63 @@ class MovieRepository(
     fun observeMovies(category: String): Flow<List<MovieEntity>> =
         dao.observeByCategory(category)
 
-    fun observeMovie(id: Int): Flow<MovieEntity?> = dao.observeById(id)
+    fun observeMovie(id: Int): Flow<MovieEntity?> =
+        dao.observeById(id)
 
-    /** Gọi API rồi ghi đè cache. Trả về Success hoặc Error, không ném exception ra ngoài. */
-    suspend fun refresh(category: String): Resource<Unit> =
-        try {
+    suspend fun refresh(category: String): Resource<Unit> {
+        return try {
             val response = when (category) {
                 CATEGORY_TOP_RATED -> api.getTopRated()
                 else -> api.getPopular()
             }
-            dao.replaceCategory(category, response.results.mapIndexed { i, dto -> dto.toEntity(category, i) })
-            Resource.Success(Unit)
-        } catch (e: java.io.IOException) {
-            Resource.Error("Không có kết nối mạng. Đang hiển thị dữ liệu đã lưu.")
-        } catch (e: retrofit2.HttpException) {
-            Resource.Error("Lỗi máy chủ (${e.code()}). Vui lòng thử lại.")
-        } catch (e: Exception) {
-            Resource.Error(e.message ?: "Đã xảy ra lỗi không xác định.")
-        }
 
-    private fun MovieDto.toEntity(category: String, position: Int) = MovieEntity(
+            dao.replaceCategory(
+                category,
+                response.results.mapIndexed { index, dto ->
+                    dto.toEntity(category, index)
+                }
+            )
+
+            Resource.Success(Unit)
+
+        } catch (e: java.io.IOException) {
+            Resource.Error("Không có kết nối mạng.")
+        } catch (e: retrofit2.HttpException) {
+            Resource.Error("Lỗi máy chủ: ${e.code()}")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Đã xảy ra lỗi.")
+        }
+    }
+
+    // TÌM KIẾM PHIM
+    suspend fun searchMovies(query: String): Resource<List<MovieEntity>> {
+        return try {
+            val response = api.searchMovies(query = query)
+
+            val movies = response.results.mapIndexed { index, dto ->
+                dto.toEntity(CATEGORY_SEARCH, index)
+            }
+
+            Resource.Success(movies)
+
+        } catch (e: java.io.IOException) {
+            Resource.Error("Không có kết nối mạng.")
+        } catch (e: retrofit2.HttpException) {
+            Resource.Error("Lỗi máy chủ: ${e.code()}")
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Đã xảy ra lỗi.")
+        }
+    }
+
+    private fun MovieDto.toEntity(
+        category: String,
+        position: Int
+    ) = MovieEntity(
         id = id,
         category = category,
         title = title.orEmpty(),
-        overview = overview?.takeIf { it.isNotBlank() } ?: "Chưa có mô tả.",
+        overview = overview?.takeIf { it.isNotBlank() }
+            ?: "Chưa có mô tả.",
         posterPath = posterPath,
         releaseDate = releaseDate,
         voteAverage = voteAverage ?: 0.0,
@@ -59,27 +82,6 @@ class MovieRepository(
     companion object {
         const val CATEGORY_POPULAR = "popular"
         const val CATEGORY_TOP_RATED = "top_rated"
+        const val CATEGORY_SEARCH = "search"
     }
 }
-class MovieViewModel(private val repository: MovieRepository) : ViewModel(){
-    val moviesFlow: Flow<List<MovieEntity>> = repository.observeMovies(MovieRepository.CATEGORY_POPULAR)
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
-    init {
-        // Khi mở app, gọi hàm refresh để tải dữ liệu mới từ API về lưu vào Room
-        refreshMovies()
-    }
-
-    fun refreshMovies() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = repository.refresh(MovieRepository.CATEGORY_POPULAR)
-            if (result is Resource.Error) {
-                _errorMessage.value = result.message
-            }
-            _isLoading.value = false
-}}}
